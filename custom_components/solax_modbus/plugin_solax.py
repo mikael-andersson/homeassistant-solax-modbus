@@ -157,6 +157,58 @@ def value_function_remotecontrol_recompute(initval, descr, datadict):
     _LOGGER.debug(f"Evaluated remotecontrol_trigger: corrected/clamped values: {res}")
     return res
 
+def value_function_remotecontrol_recompute_g3(initval, descr, datadict):
+    power_control  = datadict.get('remotecontrol_power_control_g3', "Disabled")
+    set_type       = datadict.get('remotecontrol_set_type', "Set") # other options did not work
+    target         = datadict.get('remotecontrol_active_power', 0)
+    reactive_power = datadict.get('remotecontrol_reactive_power', 0)
+    ap_up          = datadict.get('active_power_upper_g3', 0)
+    ap_lo          = datadict.get('active_power_lower_g3', 0)
+    reap_up        = datadict.get('reactive_power_upper_g3', 0)
+    reap_lo        = datadict.get('reactive_power_lower_g3', 0)
+    import_limit   = datadict.get('remotecontrol_import_limit', 20000)
+    meas           = datadict.get('measured_power', 0)
+    pv             = datadict.get('pv_power_total', 0)
+    houseload_nett = datadict.get('inverter_power', 0) - meas
+    houseload_brut = pv - datadict.get('battery_power_charge', 0) - meas
+    if   power_control == "Enabled Power Control":
+        ap_target = target
+    elif power_control == "Enabled Grid Control": # alternative computation for Power Control
+        if target <0 : ap_target = target - houseload_nett # subtract house load
+        else:          ap_target = target - houseload_brut
+        power_control = "Enabled Power Control"
+    elif power_control == "Enabled Self Use": # alternative computation for Power Control
+        ap_target = 0 - houseload_nett # subtract house load
+        power_control = "Enabled Power Control"
+    elif power_control == "Enabled Battery Control": # alternative computation for Power Control
+        ap_target = target - pv # subtract house load and pv
+        power_control = "Enabled Power Control"
+    elif power_control == "Enabled Feedin Priority": # alternative computation for Power Control
+        if pv > houseload_nett:  ap_target = 0 - pv + (houseload_brut - houseload_nett)*1.20  # 0 - pv + (houseload_brut - houseload_nett)
+        else:                    ap_target = 0 - houseload_nett
+        power_control = "Enabled Power Control"
+    elif power_control == "Enabled No Discharge": # alternative computation for Power Control
+        if pv <= houseload_nett: ap_target = 0 - pv + (houseload_brut - houseload_nett) # 0 - pv + (houseload_brut - houseload_nett)
+        else:                    ap_target = 0 - houseload_nett
+        power_control = "Enabled Power Control"
+    elif power_control == "Disabled":
+        ap_target = target
+        autorepeat_duration = 10 # or zero - stop autorepeat since it makes no sense when disabled
+    old_ap_target = ap_target
+    ap_target = min(ap_target,  import_limit - houseload_brut)
+    #_LOGGER.warning(f"peak shaving: old_ap_target:{old_ap_target} new ap_target:{ap_target} max: {import_limit-houseload} min:{-export_limit-houseload}")
+    if  old_ap_target != ap_target:
+        _LOGGER.debug(f"peak shaving: old_ap_target:{old_ap_target} new ap_target:{ap_target} max: {import_limit-houseload_brut}")
+    res =  [ ('remotecontrol_power_control',  power_control, ),
+             ('remotecontrol_set_type',       set_type, ),
+             ('remotecontrol_active_power',   ap_target, ), # correct issues #488 , #492  used to be : max(min(ap_up, ap_target),   ap_lo), ),
+             ('remotecontrol_reactive_power', max(min(reap_up, reactive_power), reap_lo), ),
+             ('remotecontrol_duration',       rc_duration, ),
+           ]
+    if (power_control == "Disabled"): autorepeat_stop(datadict, descr.key)
+    _LOGGER.debug(f"Evaluated remotecontrol_trigger: corrected/clamped values: {res}")
+    return res
+
 def value_function_byteswapserial(initval, descr, datadict):
     if initval and not initval.startswith(("M", "X")):
         preswap = initval
@@ -231,6 +283,16 @@ BUTTON_TYPES = [
         write_method = WRITE_MULTI_MODBUS,
         icon = "mdi:home-clock",
         value_function = value_function_sync_rtc,
+    ),
+    SolaxModbusButtonEntityDescription(
+        name = "Remotecontrol Trigger G3",
+        key = "remotecontrol_trigger_g3",
+        register = 0x51,
+        allowedtypes = HYBRID | GEN3,
+        write_method = WRITE_MULTI_MODBUS,
+        icon = "mdi:battery-clock",
+        value_function = value_function_remotecontrol_recompute_g3,
+        autorepeat= "remotecontrol_autorepeat_duration"
     ),
     SolaxModbusButtonEntityDescription(
         name = "Remotecontrol Trigger",
@@ -460,7 +522,7 @@ NUMBER_TYPES = [
     SolaxModbusNumberEntityDescription(
         name = "Remotecontrol Active Power",
         key = "remotecontrol_active_power",
-        allowedtypes = HYBRID | GEN4 | GEN5,
+        allowedtypes = HYBRID | GEN3 | GEN4 | GEN5,
         native_min_value = -6000,
         native_max_value = 30000,
         native_step = 100,
@@ -475,7 +537,7 @@ NUMBER_TYPES = [
         name = "Remotecontrol Reactive Power",
         key = "remotecontrol_reactive_power",
         unit = REGISTER_S32,
-        allowedtypes = HYBRID | GEN4 | GEN5,
+        allowedtypes = HYBRID | GEN3 | GEN4 | GEN5,
         native_min_value = -4000,
         native_max_value = 4000,
         native_step = 100,
@@ -515,7 +577,7 @@ NUMBER_TYPES = [
     SolaxModbusNumberEntityDescription(
         name = "Remotecontrol Import Limit",
         key = "remotecontrol_import_limit",
-        allowedtypes = HYBRID | GEN4 | GEN5,
+        allowedtypes = HYBRID | GEN3 | GEN4 | GEN5,
         native_min_value = 0,
         native_max_value = 30000, # overwritten by MAX_EXPORT
         native_step = 100,
@@ -1100,6 +1162,20 @@ SELECT_TYPES = [
         icon = "mdi:transmission-tower",
     ),
     SolaxModbusSelectEntityDescription(
+        name = "Remotecontrol Power Control_G3",
+        key = "remotecontrol_power_control_g3",
+        unit = REGISTER_U16,
+        write_method = WRITE_DATA_LOCAL,
+        option_dict =  {
+                 0: "Disabled",
+                 1: "Total",
+                 2: "Split Phase"
+            },
+        allowedtypes = HYBRID | GEN3,
+        initvalue = "Disabled",
+        icon = "mdi:transmission-tower",
+    ),
+    SolaxModbusSelectEntityDescription(
         name = "Remotecontrol Set Type",
         key = "remotecontrol_set_type",
         unit = REGISTER_U16,
@@ -1108,7 +1184,7 @@ SELECT_TYPES = [
                 1: "Set",
                 2: "Update",
             },
-        allowedtypes = HYBRID | GEN4 | GEN5,
+        allowedtypes = HYBRID | GEN3 | GEN4 | GEN5,
         initvalue = "Set",
         icon = "mdi:transmission-tower",
     ),
@@ -2604,6 +2680,13 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register = 0xA5,
         scale = value_function_gen4time,
         allowedtypes = AC | HYBRID | GEN4 | GEN5,
+        internal = True,
+    ),
+    SolaXModbusSensorEntityDescription(
+        name = "Modbus Power Control G3",
+        key = "modbus_power_control_g3",
+        register = 0xA6,
+        allowedtypes = AC | HYBRID | GEN2 | GEN3,
         internal = True,
     ),
     SolaXModbusSensorEntityDescription(
@@ -4713,6 +4796,50 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         rounding = 2,
         allowedtypes = AC | HYBRID | GEN3 | GEN4 | GEN5,
         icon = "mdi:home-import-outline",
+    ),
+    SolaXModbusSensorEntityDescription(
+        name = "Active Power Upper G3",
+        key = "active_power_upper_g3",
+        native_unit_of_measurement = UnitOfPower.WATT,
+        device_class = SensorDeviceClass.POWER,
+        state_class = SensorStateClass.MEASUREMENT,
+        register = 0xA0,
+        register_type = REG_INPUT,
+        unit = REGISTER_S32,
+        allowedtypes = AC | HYBRID | GEN3,
+    ),
+    SolaXModbusSensorEntityDescription(
+        name = "Active Power Lower G3",
+        key = "active_power_lower_g3",
+        native_unit_of_measurement = UnitOfPower.WATT,
+        device_class = SensorDeviceClass.POWER,
+        state_class = SensorStateClass.MEASUREMENT,
+        register = 0xA2,
+        register_type = REG_INPUT,
+        unit = REGISTER_S32,
+        allowedtypes = AC | HYBRID | GEN3,
+    ),
+    SolaXModbusSensorEntityDescription(
+        name = "Ractive Power Upper G3",
+        key = "reactive_power_upper_g3",
+        native_unit_of_measurement = UnitOfPower.WATT,
+        device_class = SensorDeviceClass.POWER,
+        state_class = SensorStateClass.MEASUREMENT,
+        register = 0xA4,
+        register_type = REG_INPUT,
+        unit = REGISTER_S32,
+        allowedtypes = AC | HYBRID | GEN3,
+    ),
+    SolaXModbusSensorEntityDescription(
+        name = "Reactive Power Lower G3",
+        key = "reactive_power_lower_g3",
+        native_unit_of_measurement = UnitOfPower.WATT,
+        device_class = SensorDeviceClass.POWER,
+        state_class = SensorStateClass.MEASUREMENT,
+        register = 0xA6,
+        register_type = REG_INPUT,
+        unit = REGISTER_S32,
+        allowedtypes = AC | HYBRID | GEN3,
     ),
     SolaXModbusSensorEntityDescription(
         key = "grid_export_limit",
