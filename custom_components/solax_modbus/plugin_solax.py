@@ -1163,7 +1163,7 @@ SELECT_TYPES = [
                 1: "Set",
                 2: "Update",
             },
-        allowedtypes = HYBRID | GEN3 | GEN4 | GEN5,
+        allowedtypes = HYBRID | GEN4 | GEN5,
         initvalue = "Set",
         icon = "mdi:transmission-tower",
     ),
