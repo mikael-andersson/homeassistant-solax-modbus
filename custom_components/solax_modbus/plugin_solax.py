@@ -4777,8 +4777,8 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         icon = "mdi:home-import-outline",
     ),
     SolaXModbusSensorEntityDescription(
-        name = "Active Power Upper G3",
-        key = "active_power_upper_g3",
+        name = "Active Power Upper",
+        key = "active_power_upper",
         native_unit_of_measurement = UnitOfPower.WATT,
         device_class = SensorDeviceClass.POWER,
         state_class = SensorStateClass.MEASUREMENT,
@@ -4788,8 +4788,8 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         allowedtypes = AC | HYBRID | GEN3,
     ),
     SolaXModbusSensorEntityDescription(
-        name = "Active Power Lower G3",
-        key = "active_power_lower_g3",
+        name = "Active Power Lower",
+        key = "active_power_lower",
         native_unit_of_measurement = UnitOfPower.WATT,
         device_class = SensorDeviceClass.POWER,
         state_class = SensorStateClass.MEASUREMENT,
@@ -4799,8 +4799,8 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         allowedtypes = AC | HYBRID | GEN3,
     ),
     SolaXModbusSensorEntityDescription(
-        name = "Ractive Power Upper G3",
-        key = "reactive_power_upper_g3",
+        name = "Ractive Power Upper",
+        key = "reactive_power_upper",
         native_unit_of_measurement = UnitOfPower.WATT,
         device_class = SensorDeviceClass.POWER,
         state_class = SensorStateClass.MEASUREMENT,
@@ -4810,8 +4810,8 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         allowedtypes = AC | HYBRID | GEN3,
     ),
     SolaXModbusSensorEntityDescription(
-        name = "Reactive Power Lower G3",
-        key = "reactive_power_lower_g3",
+        name = "Reactive Power Lower",
+        key = "reactive_power_lower",
         native_unit_of_measurement = UnitOfPower.WATT,
         device_class = SensorDeviceClass.POWER,
         state_class = SensorStateClass.MEASUREMENT,
