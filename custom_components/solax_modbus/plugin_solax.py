@@ -158,39 +158,20 @@ def value_function_remotecontrol_recompute(initval, descr, datadict):
     return res
 
 def value_function_remotecontrol_recompute_g3(initval, descr, datadict):
-    power_control  = datadict.get('remotecontrol_power_control_g3', "Disabled")
-    set_type       = datadict.get('remotecontrol_set_type', "Set") # other options did not work
-    target         = datadict.get('remotecontrol_active_power', 0)
-    reactive_power = datadict.get('remotecontrol_reactive_power', 0)
-    ap_up          = datadict.get('active_power_upper_g3', 0)
-    ap_lo          = datadict.get('active_power_lower_g3', 0)
-    reap_up        = datadict.get('reactive_power_upper_g3', 0)
-    reap_lo        = datadict.get('reactive_power_lower_g3', 0)
-    import_limit   = datadict.get('remotecontrol_import_limit', 20000)
-    meas           = datadict.get('measured_power', 0)
-    pv             = datadict.get('pv_power_total', 0)
+    power_control  = datadict.get('remotecontrol_power_control', "Disabled") # Selec entity G3
+    target         = datadict.get('remotecontrol_active_power', 0)     # Input entity
+    reactive_power = datadict.get('remotecontrol_reactive_power', 0)   # Input entity
+    ap_up          = datadict.get('active_power_upper', 0)             # Modbus G3: process value
+    ap_lo          = datadict.get('active_power_lower', 0)             # Modbus G3: process value
+    reap_up        = datadict.get('reactive_power_upper', 0)           # Modbus G3: process value
+    reap_lo        = datadict.get('reactive_power_lower', 0)           # Modbus G3: process value
+    import_limit   = datadict.get('remotecontrol_import_limit', 20000) # Input entity
+    meas           = datadict.get('measured_power', 0)                 # Modbus: process value
+    pv             = datadict.get('pv_power_total', 0)                 # Modbus: process value
     houseload_nett = datadict.get('inverter_power', 0) - meas
     houseload_brut = pv - datadict.get('battery_power_charge', 0) - meas
     if   power_control == "Enabled Power Control":
         ap_target = target
-    elif power_control == "Enabled Grid Control": # alternative computation for Power Control
-        if target <0 : ap_target = target - houseload_nett # subtract house load
-        else:          ap_target = target - houseload_brut
-        power_control = "Enabled Power Control"
-    elif power_control == "Enabled Self Use": # alternative computation for Power Control
-        ap_target = 0 - houseload_nett # subtract house load
-        power_control = "Enabled Power Control"
-    elif power_control == "Enabled Battery Control": # alternative computation for Power Control
-        ap_target = target - pv # subtract house load and pv
-        power_control = "Enabled Power Control"
-    elif power_control == "Enabled Feedin Priority": # alternative computation for Power Control
-        if pv > houseload_nett:  ap_target = 0 - pv + (houseload_brut - houseload_nett)*1.20  # 0 - pv + (houseload_brut - houseload_nett)
-        else:                    ap_target = 0 - houseload_nett
-        power_control = "Enabled Power Control"
-    elif power_control == "Enabled No Discharge": # alternative computation for Power Control
-        if pv <= houseload_nett: ap_target = 0 - pv + (houseload_brut - houseload_nett) # 0 - pv + (houseload_brut - houseload_nett)
-        else:                    ap_target = 0 - houseload_nett
-        power_control = "Enabled Power Control"
     elif power_control == "Disabled":
         ap_target = target
         autorepeat_duration = 10 # or zero - stop autorepeat since it makes no sense when disabled
@@ -200,10 +181,8 @@ def value_function_remotecontrol_recompute_g3(initval, descr, datadict):
     if  old_ap_target != ap_target:
         _LOGGER.debug(f"peak shaving: old_ap_target:{old_ap_target} new ap_target:{ap_target} max: {import_limit-houseload_brut}")
     res =  [ ('remotecontrol_power_control',  power_control, ),
-             ('remotecontrol_set_type',       set_type, ),
-             ('remotecontrol_active_power',   ap_target, ), # correct issues #488 , #492  used to be : max(min(ap_up, ap_target),   ap_lo), ),
+             ('remotecontrol_active_power',   ap_target, ),
              ('remotecontrol_reactive_power', max(min(reap_up, reactive_power), reap_lo), ),
-             ('remotecontrol_duration',       rc_duration, ),
            ]
     if (power_control == "Disabled"): autorepeat_stop(datadict, descr.key)
     _LOGGER.debug(f"Evaluated remotecontrol_trigger: corrected/clamped values: {res}")
@@ -285,9 +264,9 @@ BUTTON_TYPES = [
         value_function = value_function_sync_rtc,
     ),
     SolaxModbusButtonEntityDescription(
-        name = "Remotecontrol Trigger G3",
-        key = "remotecontrol_trigger_g3",
-        register = 0x51,
+        name = "Remotecontrol Trigger",
+        key = "remotecontrol_trigger",
+        register = 0x81,
         allowedtypes = HYBRID | GEN3,
         write_method = WRITE_MULTI_MODBUS,
         icon = "mdi:battery-clock",
@@ -1161,14 +1140,14 @@ SELECT_TYPES = [
         initvalue = "Disabled",
         icon = "mdi:transmission-tower",
     ),
+    # According to X3-Hybrid version 3.23
     SolaxModbusSelectEntityDescription(
-        name = "Remotecontrol Power Control_G3",
-        key = "remotecontrol_power_control_g3",
+        name = "Remotecontrol Power Control",
+        key = "remotecontrol_power_control",
         unit = REGISTER_U16,
         write_method = WRITE_DATA_LOCAL,
         option_dict =  {
                  0: "Disabled",
-                 1: "Total",
                  2: "Split Phase"
             },
         allowedtypes = HYBRID | GEN3,
@@ -2683,10 +2662,10 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         internal = True,
     ),
     SolaXModbusSensorEntityDescription(
-        name = "Modbus Power Control G3",
-        key = "modbus_power_control_g3",
+        name = "Modbus Power Control",
+        key = "modbus_power_control",
         register = 0xA6,
-        allowedtypes = AC | HYBRID | GEN2 | GEN3,
+        allowedtypes = AC | HYBRID | GEN3,
         internal = True,
     ),
     SolaXModbusSensorEntityDescription(
