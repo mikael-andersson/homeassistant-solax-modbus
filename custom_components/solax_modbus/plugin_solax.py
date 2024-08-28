@@ -158,57 +158,31 @@ def value_function_remotecontrol_recompute(initval, descr, datadict):
     return res
 
 def value_function_remotecontrol_recompute_g3(initval, descr, datadict):
-    power_control     = datadict.get('remotecontrol_power_control', "Disabled") # Selec entity G3
-    target_l1         = datadict.get('remotecontrol_active_power_l1', 0)    # Input entity
-    target_l2         = datadict.get('remotecontrol_active_power_l2', 0)    # Input entity
-    target_l3         = datadict.get('remotecontrol_active_power_l3', 0)    # Input entity
-    reactive_power_l1 = datadict.get('remotecontrol_reactive_power_l1', 0)  # Input entity
-    reactive_power_l2 = datadict.get('remotecontrol_reactive_power_l2', 0)  # Input entity
-    reactive_power_l3 = datadict.get('remotecontrol_reactive_power_l3', 0)  # Input entity
-    ap_up             = datadict.get('active_power_upper', 0)               # Modbus G3: process value
-    ap_lo             = datadict.get('active_power_lower', 0)               # Modbus G3: process value
-    reap_up           = datadict.get('reactive_power_upper', 0)             # Modbus G3: process value
-    reap_lo           = datadict.get('reactive_power_lower', 0)             # Modbus G3: process value
-    import_limit      = datadict.get('remotecontrol_import_limit', 20000)   # Input entity
-    meas_l1           = datadict.get('measured_power_l1', 0)                # Modbus: process value
-    meas_l2           = datadict.get('measured_power_l2', 0)                # Modbus: process value
-    meas_l3           = datadict.get('measured_power_l3', 0)                # Modbus: process value
-    inverter_power_l1 = datadict.get('inverter_power_l1', 0)
-    inverter_power_l2 = datadict.get('inverter_power_l2', 0)
-    inverter_power_l3 = datadict.get('inverter_power_l3', 0)
-    houseload_nett_l1    = datadict.get('inverter_power_l1', 0) - meas_l1
-    houseload_nett_l2    = datadict.get('inverter_power_l2', 0) - meas_l2
-    houseload_nett_l3    = datadict.get('inverter_power_l3', 0) - meas_l3
-    if   power_control == "Enabled Power Control":
-        ap_target_l1 = target_l1
-        ap_target_l2 = target_l2
-        ap_target_l3 = target_l3
+    power_control  = datadict.get('remotecontrol_power_control', "Disabled") # Selec entity G3
+    target         = datadict.get('remotecontrol_active_power', 0)     # Input entity
+    reactive_power = datadict.get('remotecontrol_reactive_power', 0)   # Input entity
+    ap_up          = datadict.get('active_power_upper', 0)             # Modbus G3: process value
+    ap_lo          = datadict.get('active_power_lower', 0)             # Modbus G3: process value
+    reap_up        = datadict.get('reactive_power_upper', 0)           # Modbus G3: process value
+    reap_lo        = datadict.get('reactive_power_lower', 0)           # Modbus G3: process value
+    import_limit   = datadict.get('remotecontrol_import_limit', 20000) # Input entity
+    meas           = datadict.get('measured_power', 0)                 # Modbus: process value
+    pv             = datadict.get('pv_power_total', 0)                 # Modbus: process value
+    houseload_nett = datadict.get('inverter_power', 0) - meas
+#    houseload_brut = pv - datadict.get('battery_power_charge', 0) - meas
+    if   power_control == "Total":
+        ap_target = target
     elif power_control == "Disabled":
-        ap_target_l1 = target_l1
-        ap_target_l2 = target_l2
-        ap_target_l3 = target_l3
+        ap_target = target
         autorepeat_duration = 10 # or zero - stop autorepeat since it makes no sense when disabled
-    old_ap_target_l1 = ap_target_l1
-    old_ap_target_l2 = ap_target_l2
-    old_ap_target_l3 = ap_target_l3
-    ap_target_l1 = min(ap_target_l1,  import_limit/3 - houseload_nett_l1)
-    ap_target_l2 = min(ap_target_l2,  import_limit/3 - houseload_nett_l2)
-    ap_target_l3 = min(ap_target_l3,  import_limit/3 - houseload_nett_l3)
+    old_ap_target = ap_target
+    ap_target = min(ap_target,  import_limit - houseload_nett)
     #_LOGGER.warning(f"peak shaving: old_ap_target:{old_ap_target} new ap_target:{ap_target} max: {import_limit-houseload} min:{-export_limit-houseload}")
-    if  old_ap_target_l1 != ap_target_l1:
-        _LOGGER.debug(f"peak shaving: old_ap_target:{old_ap_target_l1} new ap_target:{ap_target_l1} max: {import_limit/3-houseload_nett_l1}")
-    if  old_ap_target_l2 != ap_target_l2:
-        _LOGGER.debug(f"peak shaving: old_ap_target:{old_ap_target_l2} new ap_target:{ap_target_l2} max: {import_limit/3-houseload_nett_l2}")
-    if  old_ap_target_l3 != ap_target_l3:
-        _LOGGER.debug(f"peak shaving: old_ap_target:{old_ap_target_l3} new ap_target:{ap_target_l3} max: {import_limit/3-houseload_nett_l3}")
-    # TODO: Maybe fix calculation per phase for reactive power below.
+    if  old_ap_target != ap_target:
+        _LOGGER.debug(f"peak shaving: old_ap_target:{old_ap_target} new ap_target:{ap_target} max: {import_limit-houseload_nett}")
     res =  [ ('remotecontrol_power_control',  power_control, ),
-             ('remotecontrol_active_power_l1',   ap_target_l1, ),
-             ('remotecontrol_active_power_l2',   ap_target_l2, ),
-             ('remotecontrol_active_power_l3',   ap_target_l3, ),
-             ('remotecontrol_reactive_power_l1', max(min(reap_up, reactive_power_l1), reap_lo), ),
-             ('remotecontrol_reactive_power_l2', max(min(reap_up, reactive_power_l2), reap_lo), ),
-             ('remotecontrol_reactive_power_l3', max(min(reap_up, reactive_power_l3), reap_lo), ),
+             ('remotecontrol_active_power',   ap_target, ),
+             ('remotecontrol_reactive_power', max(min(reap_up, reactive_power), reap_lo), ),
            ]
     if (power_control == "Disabled"): autorepeat_stop(datadict, descr.key)
     _LOGGER.debug(f"Evaluated remotecontrol_trigger: corrected/clamped values: {res}")
@@ -292,7 +266,7 @@ BUTTON_TYPES = [
     SolaxModbusButtonEntityDescription(
         name = "Remotecontrol Trigger",
         key = "remotecontrol_trigger",
-        register = 0x81,
+        register = 0x7C,
         allowedtypes = HYBRID | GEN3,
         write_method = WRITE_MULTI_MODBUS,
         icon = "mdi:battery-clock",
@@ -527,7 +501,7 @@ NUMBER_TYPES = [
     SolaxModbusNumberEntityDescription(
         name = "Remotecontrol Active Power",
         key = "remotecontrol_active_power",
-        allowedtypes = HYBRID | GEN4 | GEN5,
+        allowedtypes = HYBRID | GEN3 | GEN4 | GEN5,
         native_min_value = -6000,
         native_max_value = 30000,
         native_step = 100,
@@ -539,91 +513,10 @@ NUMBER_TYPES = [
         write_method = WRITE_DATA_LOCAL,
     ),
     SolaxModbusNumberEntityDescription(
-        name = "Remotecontrol Active Power L1",
-        key = "remotecontrol_active_power_l1",
-        allowedtypes = HYBRID | GEN3,
-        native_min_value = -30000,
-        native_max_value = 30000,
-        native_step = 100,
-        native_unit_of_measurement = UnitOfPower.WATT,
-        device_class = NumberDeviceClass.POWER,
-        initvalue = 0,
-        min_exceptions_minus = MAX_EXPORT, # negative
-        unit = REGISTER_S16,
-        write_method = WRITE_DATA_LOCAL,
-    ),
-    SolaxModbusNumberEntityDescription(
-        name = "Remotecontrol Active Power L2",
-        key = "remotecontrol_active_power_l2",
-        allowedtypes = HYBRID | GEN3,
-        native_min_value = -30000,
-        native_max_value = 30000,
-        native_step = 100,
-        native_unit_of_measurement = UnitOfPower.WATT,
-        device_class = NumberDeviceClass.POWER,
-        initvalue = 0,
-        min_exceptions_minus = MAX_EXPORT, # negative
-        unit = REGISTER_S16,
-        write_method = WRITE_DATA_LOCAL,
-    ),
-    SolaxModbusNumberEntityDescription(
-        name = "Remotecontrol Active Power L3",
-        key = "remotecontrol_active_power_l3",
-        allowedtypes = HYBRID | GEN3,
-        native_min_value = -30000,
-        native_max_value = 30000,
-        native_step = 100,
-        native_unit_of_measurement = UnitOfPower.WATT,
-        device_class = NumberDeviceClass.POWER,
-        initvalue = 0,
-        min_exceptions_minus = MAX_EXPORT, # negative
-        unit = REGISTER_S16,
-        write_method = WRITE_DATA_LOCAL,
-    ),
-    SolaxModbusNumberEntityDescription(
         name = "Remotecontrol Reactive Power",
         key = "remotecontrol_reactive_power",
         unit = REGISTER_S32,
-        allowedtypes = HYBRID | GEN4 | GEN5,
-        native_min_value = -4000,
-        native_max_value = 4000,
-        native_step = 100,
-        native_unit_of_measurement = POWER_VOLT_AMPERE_REACTIVE,
-        device_class = NumberDeviceClass.REACTIVE_POWER,
-        initvalue = 0,
-        write_method = WRITE_DATA_LOCAL,
-    ),
-    SolaxModbusNumberEntityDescription(
-        name = "Remotecontrol Reactive Power L1",
-        key = "remotecontrol_reactive_power_l1",
-        unit = REGISTER_S16,
-        allowedtypes = HYBRID | GEN3,
-        native_min_value = -4000,
-        native_max_value = 4000,
-        native_step = 100,
-        native_unit_of_measurement = POWER_VOLT_AMPERE_REACTIVE,
-        device_class = NumberDeviceClass.REACTIVE_POWER,
-        initvalue = 0,
-        write_method = WRITE_DATA_LOCAL,
-    ),
-    SolaxModbusNumberEntityDescription(
-        name = "Remotecontrol Reactive Power L2",
-        key = "remotecontrol_reactive_power_l2",
-        unit = REGISTER_S16,
-        allowedtypes = HYBRID | GEN3,
-        native_min_value = -4000,
-        native_max_value = 4000,
-        native_step = 100,
-        native_unit_of_measurement = POWER_VOLT_AMPERE_REACTIVE,
-        device_class = NumberDeviceClass.REACTIVE_POWER,
-        initvalue = 0,
-        write_method = WRITE_DATA_LOCAL,
-    ),
-    SolaxModbusNumberEntityDescription(
-        name = "Remotecontrol Reactive Power L3",
-        key = "remotecontrol_reactive_power_l3",
-        unit = REGISTER_S16,
-        allowedtypes = HYBRID | GEN3,
+        allowedtypes = HYBRID | GEN3 | GEN4 | GEN5,
         native_min_value = -4000,
         native_max_value = 4000,
         native_step = 100,
@@ -1255,7 +1148,7 @@ SELECT_TYPES = [
         write_method = WRITE_DATA_LOCAL,
         option_dict =  {
                  0: "Disabled",
-                 2: "Split Phase"
+                 1: "Total"
             },
         allowedtypes = HYBRID | GEN3,
         initvalue = "Disabled",
