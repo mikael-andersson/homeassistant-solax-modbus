@@ -3732,6 +3732,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register_type = REG_INPUT,
         unit = REGISTER_S16,
         allowedtypes = AC | HYBRID | GEN2 | GEN3 | GEN4 | GEN5,
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "PV Voltage 1",
@@ -3863,6 +3864,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register_type = REG_INPUT,
         allowedtypes = HYBRID,
         icon = "mdi:solar-power-variant",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "PV Power 2",
@@ -3874,6 +3876,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register_type = REG_INPUT,
         allowedtypes = HYBRID,
         icon = "mdi:solar-power-variant",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "Time Count Down",
@@ -3966,6 +3969,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         unit = REGISTER_S16,
         allowedtypes = AC | HYBRID | GEN2 | GEN3 | GEN4,
         icon = "mdi:battery-charging",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "Battery 1 Power Charge",
@@ -4199,6 +4203,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register_type = REG_INPUT,
         unit = REGISTER_S32,
         allowedtypes =  AC | HYBRID | GEN2 | GEN3 | GEN4 | GEN5,
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "Grid Export Total",
@@ -4661,6 +4666,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register_type = REG_INPUT,
         unit = REGISTER_S32,
         allowedtypes = HYBRID | GEN3 | GEN4 | GEN5 | X3,
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "Measured Power L2",
@@ -5496,6 +5502,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         unit = REGISTER_U32,
         allowedtypes = AC | HYBRID | GEN3 | GEN4 | GEN5 | PM,
         icon = "mdi:solar-power-variant",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "PM PV Power 2",
@@ -6102,6 +6109,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         value_function = value_function_battery_power_charge,
         allowedtypes = AC | HYBRID | GEN5,
         icon = "mdi:battery-charging",
+        scan_group = SCAN_GROUP_FAST,
     ),
 #####
 #
@@ -6409,6 +6417,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         #newblock = True,
         register_type = REG_INPUT,
         allowedtypes = MIC | GEN | GEN2,
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "Run Mode",
@@ -6463,6 +6472,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register_type = REG_INPUT,
         allowedtypes = MIC | GEN | GEN2,
         icon = "mdi:solar-power-variant",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "PV Power 2",
@@ -6474,6 +6484,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register_type = REG_INPUT,
         allowedtypes = MIC | GEN | GEN2,
         icon = "mdi:solar-power-variant",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "PV Power Total",
@@ -6600,6 +6611,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         entity_registry_enabled_default = False,
         allowedtypes = MIC | GEN,
         icon = "mdi:solar-power-variant",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "Total Grid Export",
@@ -6673,6 +6685,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         entity_registry_enabled_default = False,
         allowedtypes = MIC | GEN2,
         icon = "mdi:solar-power-variant",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "Total Grid Export",
@@ -6878,6 +6891,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register = 0x409,
         register_type = REG_INPUT,
         allowedtypes = MIC | GEN4 | GEN5,
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "PV Voltage 1",
@@ -6958,6 +6972,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register_type = REG_INPUT,
         allowedtypes = MIC | GEN4,
         icon = "mdi:solar-power-variant",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "PV Power 2",
@@ -6969,6 +6984,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register_type = REG_INPUT,
         allowedtypes = MIC | GEN4,
         icon = "mdi:solar-power-variant",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "PV Power 3",
@@ -7241,6 +7257,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register = 0x1012,
         allowedtypes = MAX,
         icon = "mdi:solar-power-variant",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "PV Voltage 2",
@@ -7272,6 +7289,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         register = 0x1016,
         allowedtypes = MAX,
         icon = "mdi:solar-power-variant",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "PV Voltage 3",
