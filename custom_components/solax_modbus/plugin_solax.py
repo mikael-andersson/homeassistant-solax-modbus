@@ -4219,6 +4219,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         rounding = 2,
         allowedtypes = AC | HYBRID | GEN2 | GEN3 | GEN4 | GEN5,
         icon = "mdi:home-export-outline",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "Grid Import Total",
@@ -4234,6 +4235,7 @@ SENSOR_TYPES_MAIN: list[SolaXModbusSensorEntityDescription] = [
         rounding = 2,
         allowedtypes = AC | HYBRID | GEN2 | GEN3 | GEN4 | GEN5,
         icon = "mdi:home-import-outline",
+        scan_group = SCAN_GROUP_FAST,
     ),
     SolaXModbusSensorEntityDescription(
         name = "EPS Voltage",
